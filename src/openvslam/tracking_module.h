@@ -29,6 +29,7 @@ class orb_extractor;
 } // namespace feature
 
 // tracker state
+// 状态机鸭
 enum class tracker_state_t {
     NotInitialized,
     Initializing,

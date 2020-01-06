@@ -33,6 +33,7 @@ class map_publisher;
 class frame_publisher;
 } // namespace publish
 
+// 整个slam系统
 class system {
 public:
     //! Constructor
@@ -103,14 +104,17 @@ public:
 
     //! Feed a monocular frame to SLAM system
     //! (NOTE: distorted images are acceptable if calibrated)
+    // 未畸变矫正的原图能直接输入，当标定好的时候
     Mat44_t feed_monocular_frame(const cv::Mat& img, const double timestamp, const cv::Mat& mask = cv::Mat{});
 
     //! Feed a stereo frame to SLAM system
     //! (Note: Left and Right images must be stereo-rectified)
+    // 必须先矫正过的左右眼图像
     Mat44_t feed_stereo_frame(const cv::Mat& left_img, const cv::Mat& right_img, const double timestamp, const cv::Mat& mask = cv::Mat{});
 
     //! Feed an RGBD frame to SLAM system
     //! (Note: RGB and Depth images must be aligned)
+    // rgb和d需要校准好
     Mat44_t feed_RGBD_frame(const cv::Mat& rgb_img, const cv::Mat& depthmap, const double timestamp, const cv::Mat& mask = cv::Mat{});
 
     //-----------------------------------------

@@ -10,6 +10,7 @@
 #include "openvslam/config.h"
 
 #include <iostream>
+// “精确中立的时间和日期库”
 #include <chrono>
 #include <numeric>
 
@@ -26,7 +27,7 @@
 #include <gperftools/profiler.h>
 #endif
 
-void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
+void mono_tracking(const std::shared_ptr<openvslam::config>& cfg, // 通过传入 shared_ptr 传参
                    const std::string& vocab_file_path, const std::string& image_dir_path, const std::string& mask_img_path,
                    const unsigned int frame_skip, const bool no_sleep, const bool auto_term,
                    const bool eval_log, const std::string& map_db_path) {
@@ -42,20 +43,27 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
     SLAM.startup();
 
 #ifdef USE_PANGOLIN_VIEWER
+    // 通过 shared_ptr 通信
     pangolin_viewer::viewer viewer(cfg, &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
 #elif USE_SOCKET_PUBLISHER
     socket_publisher::publisher publisher(cfg, &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
 #endif
-
+    // frame 之间(注意是每skip个之间的一帧)的track 用时
     std::vector<double> track_times;
     track_times.reserve(frames.size());
 
     // run the SLAM in another thread
+    // 匿名函数
+    // [&] 表示匿名函数里面所有外部变量使用引用捕捉
+    // [=] 表示按值
     std::thread thread([&]() {
         for (unsigned int i = 0; i < frames.size(); ++i) {
+            // frame 是 frame 类的
+            // frame 类居然是嵌套类
             const auto& frame = frames.at(i);
             const auto img = cv::imread(frame.img_path_, cv::IMREAD_UNCHANGED);
 
+            // tp_1 tp_2 是用于计算track用时的
             const auto tp_1 = std::chrono::steady_clock::now();
 
             if (!img.empty() && (i % frame_skip == 0)) {
@@ -71,6 +79,7 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
             }
 
             // wait until the timestamp of the next frame
+            // 如果设定了sleep而且不是最后一帧
             if (!no_sleep && i < frames.size() - 1) {
                 const auto wait_time = frames.at(i + 1).timestamp_ - (frame.timestamp_ + track_time);
                 if (0.0 < wait_time) {
@@ -83,13 +92,14 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
                 break;
             }
         }
-
+        // vo在本线程，本线程等待ba完成
         // wait until the loop BA is finished
         while (SLAM.loop_BA_is_running()) {
             std::this_thread::sleep_for(std::chrono::microseconds(5000));
         }
 
         // automatically close the viewer
+        // 每帧之间自动停止？
 #ifdef USE_PANGOLIN_VIEWER
         if (auto_term) {
             viewer.request_terminate();
@@ -107,7 +117,7 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
 #elif USE_SOCKET_PUBLISHER
     publisher.run();
 #endif
-
+    // 等待建图线程运行完，当前线程阻塞
     thread.join();
 
     // shutdown the SLAM process
@@ -203,6 +213,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     // run tracking
+    // 此模式只允许跑单目
     if (cfg->camera_->setup_type_ == openvslam::camera::setup_type_t::Monocular) {
         mono_tracking(cfg, vocab_file_path->value(), img_dir_path->value(), mask_img_path->value(),
                       frame_skip->value(), no_sleep->is_set(), auto_term->is_set(),

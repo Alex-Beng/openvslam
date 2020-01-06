@@ -316,6 +316,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     // run tracking
+    // 那就康康rgbd_tracking
     if (cfg->camera_->setup_type_ == openvslam::camera::setup_type_t::Monocular) {
         mono_tracking(cfg, vocab_file_path->value(), data_dir_path->value(),
                       frame_skip->value(), no_sleep->is_set(), auto_term->is_set(),

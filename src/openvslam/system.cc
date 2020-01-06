@@ -234,9 +234,9 @@ void system::abort_loop_BA() {
 
 Mat44_t system::feed_monocular_frame(const cv::Mat& img, const double timestamp, const cv::Mat& mask) {
     assert(camera_->setup_type_ == camera::setup_type_t::Monocular);
-
+    // 查看是否有 reset 请求
     check_reset_request();
-
+    // typedef 与 using的区别
     const Mat44_t cam_pose_cw = tracker_->track_monocular_image(img, timestamp, mask);
 
     frame_publisher_->update(tracker_);
